@@ -8,7 +8,8 @@ with main as (
 
 select
       *
-      , coalesce(attempt, review) as submissions_id
+      , coalesce(attempt, review) as submissions_id,
+      'ok' as ok
 
 from SCALE_PROD.PUBLIC.PAYABLES, lateral flatten( input => amounts ) 
 
