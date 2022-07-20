@@ -233,7 +233,7 @@ projects_future as (
       left join public.projects p
             on a.project_id = p._id
 
-),
+)
 
 
 -----------------------Unions--------------------------
