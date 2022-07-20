@@ -30,7 +30,7 @@ amounts as (
   select
     P.value:netHundredthsOfCents / 10000 pay
     , P.value:payout as payout_id
-    , _ID as payable_ID
+    , P._ID as payable_ID
     , case 
         when submissions_id is not null then pay else 0
       end as task_pay
@@ -61,24 +61,24 @@ amounts as (
     , coalesce(fwa.TASK_TYPE, ta.TASK_TYPE, r.reward_type) as TYPE
     , fwa.SUBTASK_STATUS
     , case
-        when (created_At >= timestamp '{{Initial date}}')
-          and (created_At < timestamp '{{Final date}}')
+        when (P.created_At >= timestamp '{{Initial date}}')
+          and (P.created_At < timestamp '{{Final date}}')
           then timestamp '{{Initial date}}'
-        when (created_At >= (timestamp '{{Initial date}}' - interval '7 day')
-          and (created_At < (timestamp '{{Final date}}' - interval '7 day')
+        when (P.created_At >= (timestamp '{{Initial date}}' - interval '7 day'))
+          and (P.created_At < (timestamp '{{Final date}}' - interval '7 day'))
           then (timestamp '{{Initial date}}' - interval '7 day')
-        when (created_At >= (timestamp '{{Initial date}}' - interval '14 day')
-          and (created_At < (timestamp '{{Final date}}' - interval '14 day')
+        when (P.created_At >= (timestamp '{{Initial date}}' - interval '14 day'))
+          and (P.created_At < (timestamp '{{Final date}}' - interval '14 day'))
           then (timestamp '{{Initial date}}' - interval '14 day')
-        when (created_At >= (timestamp '{{Initial date}}' - interval '21 day')
-          and (created_At < (timestamp '{{Final date}}' - interval '21 day')
+        when (P.created_At >= (timestamp '{{Initial date}}' - interval '21 day'))
+          and (P.created_At < (timestamp '{{Final date}}' - interval '21 day'))
           then (timestamp '{{Initial date}}' - interval '21 day')
-        when (created_At >= (timestamp '{{Initial date}}' - interval '28 day')
-          and (created_At < (timestamp '{{Final date}}' - interval '28 day')
+        when (P.created_At >= (timestamp '{{Initial date}}' - interval '28 day'))
+          and (P.created_At < (timestamp '{{Final date}}' - interval '28 day'))
           then (timestamp '{{Initial date}}' - interval '28 day')
         end as wk
-    , coalesce(fwa.work_id, ta._ID, r.ID) as _ID
-    , coalesce(fwa.BEST_GUESS_HOURS_SPENT, ta.Time_spent_seconds/3600) as Time_spent
+    , coalesce(fwa.work_id, ta._ID, r._ID) as _ID
+    , coalesce(fwa.BEST_GUESS_HOURS_SPENT, ta.TIME_SPENT_SECS/3600) as Time_spent
   
   from nonFrozenPayables P
       left join public.users u 
@@ -93,8 +93,8 @@ amounts as (
             on fwa.work_ID = r2.submission_ID
             
   where TRUE
-    and (m.value :status <> 'pending'
-    and m.value :status <> 'canceled')
+    and (P.value :status <> 'pending'
+    and P.value :status <> 'canceled')
     and u.account_type = 'worker'
     and u.worker_status <> 'banned'
     and u.worker_status <> 'disabled'
@@ -109,7 +109,7 @@ projects_past as (
 
   select
     wk
-    , payable_ID, payout_ID, source, _ID
+    , payable_ID, payout_ID, source, a._ID
     , task_pay, BM_pay, Reward_pay, Time_spent
     , project_id, p.name
     , ip_country, mod_team
@@ -149,9 +149,9 @@ payable_ids as (
 amounts2 as (
 
   select
-    m.value :netHundredthsOfCents / 10000 pay
+    P.value :netHundredthsOfCents / 10000 pay
     , P.value:payout as payout_id
-    , _ID as payable_ID
+    , P._ID as payable_ID
     , case 
         when submissions_id is not null then pay else 0
       end as task_pay
@@ -181,8 +181,8 @@ amounts2 as (
     , coalesce(fwa.WORK_LEVEL, ta.review_level) as work_level
     , coalesce(fwa.TASK_TYPE, ta.TASK_TYPE, r.reward_type) as TYPE
     , fwa.SUBTASK_STATUS
-    , coalesce(fwa.work_id, ta._ID, r.ID) as _ID
-    , coalesce(fwa.BEST_GUESS_HOURS_SPENT, ta.Time_spent_seconds/3600) as Time_spent
+    , coalesce(fwa.work_id, ta._ID, r._ID) as _ID
+    , coalesce(fwa.BEST_GUESS_HOURS_SPENT, ta.TIME_SPENT_SECS/3600) as Time_spent
 
   from nonFrozenPayables P
       left join public.users u 
@@ -199,12 +199,12 @@ amounts2 as (
 where true
       and p._id in (select _id from payable_ids)
       and (
-            m.value :createdAt < timestamp '{{Final date}}'
-            or m.value :forcedIntoPeriod = true
+            P.value :createdAt < timestamp '{{Final date}}'
+            or P.value :forcedIntoPeriod = true
           )
       and (
-            m.value :status <> 'processed'
-            and m.value :status <> 'canceled'
+            P.value :status <> 'processed'
+            and P.value :status <> 'canceled'
           )
       and u.account_type = 'worker'
       and u.worker_status <> 'banned'
@@ -223,7 +223,7 @@ projects_future as (
 
   select
     '{{Initial date}}' as wk
-    , payable_ID, payout_ID, source, _ID
+    , payable_ID, payout_ID, source, a._ID
     , task_pay, BM_pay, Reward_pay, Time_spent
     , project_id, p.name
     , ip_country, mod_team
