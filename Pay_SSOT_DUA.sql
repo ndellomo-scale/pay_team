@@ -16,7 +16,7 @@ with nonFrozenPayables as (
     
   where true
       and (frozen is null or frozen = false)
-      --and reward is NULL -- commenting this out otherwise we wont have any rewards ids
+      and created_at >= timestamp '2022-01-01'
       
 ),
 
@@ -32,8 +32,11 @@ amounts as (
     , P.value:payout as payout_id
     , P._ID as payable_ID
     , case 
-        when submissions_id is not null then pay else 0
-      end as task_pay
+        when attempt is not null then pay else 0
+      end as attempt_pay --separating task_pay into attempt and review pay
+    , case 
+        when review is not null then pay else 0
+      end as review_pay
     , case 
         when reward is not null then pay else 0
       end as Reward_pay
@@ -41,7 +44,7 @@ amounts as (
         when training_attempt is not null then pay else 0
       end as BM_pay
     , case
-        when submissions_id is not null then fwa.project
+        when submissions_id is not null then fwa.project --keeping submission for everything else
         when reward is not null then coalesce(r.project, r2.project) --r2 in case it was attributed to a work_id
         when training_attempt is not null then ta.project
       end as project_id
@@ -53,7 +56,7 @@ amounts as (
       end as source
     , case
         when source in ('MODTA', 'PHQA')
-          then left(right(u.email, 16), 2) else ''
+          then left(right(u.email, 16), 2) else 'not_modta'
       end as mod_team
     , P.worker
     , coalesce(fwa.WORKER_COUNTRY_CODE, u.IP_COUNTRY_CODE) as ip_country  --get project name and permission name at the end
@@ -84,7 +87,7 @@ amounts as (
       left join public.users u 
             on P.worker = u._id
       left join view.fact_work_aggregate fwa 
-            on P.submissions_id = fwa.work_id
+            on P.submissions_id = fwa.work_id --keeping the coalesce on submissions_ID for this join
       left join public.rewards r
             on P.reward = r._ID
       left join public.trainingattempts ta
@@ -110,14 +113,14 @@ projects_past as (
   select
     wk
     , payable_ID, payout_ID, source, a._ID
-    , task_pay, BM_pay, Reward_pay, Time_spent
-    , project_id, p.name
+    , attempt_pay, review_pay, BM_pay, Reward_pay, Time_spent
+    , a.project_id, p.project_name, p.PERMISSION_GROUP_NAME
     , ip_country, mod_team
     , WORK_LEVEL, TYPE, SUBTASK_STATUS
     
   from amounts a
-      left join public.projects p
-            on a.project_id = p._id
+      left join view.dim_projects p --changing from public.projects to dim_projects
+            on a.project_id = p.project_id
   
   where true
     and wk <> '{{Initial date}}'
@@ -153,8 +156,11 @@ amounts2 as (
     , P.value:payout as payout_id
     , P._ID as payable_ID
     , case 
-        when submissions_id is not null then pay else 0
-      end as task_pay
+        when attempt is not null then pay else 0
+      end as attempt_pay --separating task_pay into attempt and review pay
+    , case 
+        when review is not null then pay else 0
+      end as review_pay
     , case 
         when reward is not null then pay else 0
       end as Reward_pay
@@ -174,7 +180,7 @@ amounts2 as (
       end as source
     , case
         when source in ('MODTA', 'PHQA')
-          then left(right(u.email, 16), 2) else ''
+          then left(right(u.email, 16), 2) else 'not_modta'
       end as mod_team
     , P.worker
     , coalesce(fwa.WORKER_COUNTRY_CODE, u.IP_COUNTRY_CODE) as ip_country  --get project name and permission name at the end
@@ -224,14 +230,14 @@ projects_future as (
   select
     '{{Initial date}}' as wk
     , payable_ID, payout_ID, source, a._ID
-    , task_pay, BM_pay, Reward_pay, Time_spent
-    , project_id, p.name
+    , attempt_pay, review_pay, BM_pay, Reward_pay, Time_spent
+    , a.project_id, p.project_name, p.PERMISSION_GROUP_NAME
     , ip_country, mod_team
     , WORK_LEVEL, TYPE, SUBTASK_STATUS
     
   from amounts2 a
-      left join public.projects p
-            on a.project_id = p._id
+      left join view.dim_projects p --changing from public.projects to dim_projects
+            on a.project_id = p.project_id
 
 )
 
