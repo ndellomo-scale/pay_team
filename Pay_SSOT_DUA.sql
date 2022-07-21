@@ -16,7 +16,7 @@ with nonFrozenPayables as (
     
   where true
       and (frozen is null or frozen = false)
-      and reward is NULL
+      --and reward is NULL -- commenting this out otherwise we wont have any rewards ids
       
 ),
 
