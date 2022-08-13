@@ -12,7 +12,7 @@ library(Redashr)
 
 #Get the data
 
-conn <- redash_connect("https://redash.scale.com/", "F1SCtNJ9XaWOoj5rkqZWxh6sVQ5FM23a2DoOJfcA", "_Snowflake")
+conn <- redash_connect("https://redash.scale.com/", "#############################", "_Snowflake")
 setwd("~/Documents/GitHub/pay_team/FRAUD_SPAM")
 
 getQ <- function(fileName){
@@ -25,4 +25,5 @@ getQ <- function(fileName){
 }
 
 Workers <- getQ("SP2 Workers.sql")
+
 
